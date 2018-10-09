@@ -4,7 +4,6 @@ var MongoClient = require('mongodb').MongoClient;
 
 
 module.exports = function (app) {
-    var credentials = {};
 
     app.route('/')
         .get(function (req, res) {
@@ -12,6 +11,8 @@ module.exports = function (app) {
         })
 
         .post(function (req, res) {
+            var credentials = {};
+
             credentials = {
                 email: req.body.email,
                 password: req.body.pwd
@@ -39,16 +40,15 @@ module.exports = function (app) {
                 console.log(res);
                 if (err) throw err;
                 if (res == null) {
-                    console.log("hereeeeeeeeeeeeeeeeeeeeeee");
-                    var newUser     = new user();
+                    var newUser = new user();
                     newUser.email = credentials.email;
                     newUser.password = credentials.password;
 
-                    newUser.save(function(err, res){
+                    newUser.save(function (err, res) {
                         if (err) throw err;
                         console.log("New user added to db");
                     });
-                }else if (res.length == 0) {
+                } else if (res.length == 0) {
                     console.log("Invalid email or password");
                 } else {
                     console.log("OK");
@@ -58,6 +58,39 @@ module.exports = function (app) {
             res.sendFile(path.join(__dirname + '../../../profile.html'));
         });
 
+    app.route('/views/signup.html')
+        .get(function (req, res) {
+            res.sendFile(path.join(__dirname + '../../../views/signup.html'));
+        });
+
+    app.route('/signup')
+        .post(function (req, res) {
+            var credentials = {};
+
+            credentials = {
+                name: req.body.name,
+                email: req.body.email,
+                username: req.body.username,
+                password: req.body.password,
+                confirm: req.body.confirm
+            }
+
+            var hasEmptyField = false;
+            for (var field in credentials) {
+                console.log(credentials.field);
+                if (credentials.field == '') {
+                    hasEmptyField = true;
+                }
+            }
+
+            if (hasEmptyField) {
+                console.log("Must fill all fields in form");
+            } else if (credentials.password != credentials.confirm) {
+                console.log('Password not match')
+            }
+
+            res.send("OK");
+        });
     app.route('*')
         .get(function (req, res) {
             res.sendFile(path.join(__dirname + '../../../index.html'));
