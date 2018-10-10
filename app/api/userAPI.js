@@ -18,40 +18,14 @@ module.exports = function (app) {
                 password: req.body.pwd
             }
 
-            // MongoClient.connect(url, function (err, db) {
-            //     if (err) throw err;
-            //     var dbo = db.db("mydb");
-            //     dbo.collection("users").find(credentials).toArray(function (err, result) {
-            //         if (err) throw err;
-            //         console.log(result);
-            //         if (result.length == 0) {
-            //             dbo.collection("users").insertOne(credentials, function(err, res){
-            //                 if (err) throw err;
-            //                 console.log("One user inserted to db!");
-            //             });
-            //         }else {
-            //             console.log("This user already exists!");
-            //         }
-            //         db.close();
-            //     });
-            // });
-
-            user.findOne(credentials, function (err, res) {
-                console.log(res);
+            user.findOne({ email: credentials.email, password: credentials.password }, function (err, res) {
                 if (err) throw err;
                 if (res == null) {
-                    var newUser = new user();
-                    newUser.email = credentials.email;
-                    newUser.password = credentials.password;
-
-                    newUser.save(function (err, res) {
-                        if (err) throw err;
-                        console.log("New user added to db");
-                    });
+                    console.log("There is no user with this e-mail and password");
                 } else if (res.length == 0) {
-                    console.log("Invalid email or password");
+                    console.log("There is no user with this e-mail and password");
                 } else {
-                    console.log("OK");
+                    console.log("A user logged in to movies calendar");
                 }
             });
 
@@ -77,8 +51,7 @@ module.exports = function (app) {
 
             var hasEmptyField = false;
             for (var field in credentials) {
-                console.log(credentials.field);
-                if (credentials.field == '') {
+                if (credentials[field] == '') {
                     hasEmptyField = true;
                 }
             }
@@ -87,6 +60,23 @@ module.exports = function (app) {
                 console.log("Must fill all fields in form");
             } else if (credentials.password != credentials.confirm) {
                 console.log('Password not match')
+            } else if (credentials.password.length < 8) {
+                console.log("Passwod are not strong. At least 8 characters");
+            } else if (check_if_email_exists(credentials.email)) {
+                console.log("Wrong email");
+            } else if (check_if_username_exists(credentials.username)) {
+                console.log("Wrong username");
+            } else {
+                var newUser = new user();
+
+                newUser.username = credentials.username;
+                newUser.email = credentials.email;
+                newUser.password = credentials.password;
+
+                newUser.save(function (err, res) {
+                    if (err) throw err;
+                    console.log("A new user added to db");
+                });
             }
 
             res.send("OK");
@@ -95,4 +85,26 @@ module.exports = function (app) {
         .get(function (req, res) {
             res.sendFile(path.join(__dirname + '../../../index.html'));
         })
+
+    function check_if_email_exists(email) {
+        user.findOne({ email: email }, function (err, res) {
+            if (err) throw err;
+            if (!res) {
+                console.log("This e-mail already exists. Please give a different e-mail");
+                return true;
+            }
+        });
+        return false;
+    }
+
+    function check_if_username_exists(username) {
+        user.findOne({ username: username }, function (err, res) {
+            if (err) throw err;
+            if (res != null) {
+                console.log("This username already exists.");
+                return true;
+            }
+        });
+        return false;
+    }
 }
